@@ -1,0 +1,20 @@
+** Drc report for /home/domen/github/nina-semafor/kontroler/kontroler.kicad_pcb **
+** Created on 2016-08-28 12:41:25 **
+
+** Found 0 DRC errors **
+
+** Found 4 unconnected pads **
+ErrType(2): Unconnected pads
+    @ (86.360 mm,77.470 mm): Pad 1 on B.Cu, Non-copper of W5 net ADC_V_OUT
+    @ (82.550 mm,76.835 mm): Pad 4 on F.Cu, B.Cu, Internal, Non-copper of P5
+ErrType(2): Unconnected pads
+    @ (131.572 mm,54.610 mm): Pad 4 on B.Cu, Non-copper of Q4 net Net-(P2-Pad1)
+    @ (124.968 mm,54.610 mm): Pad 2 on B.Cu, Non-copper of Q4
+ErrType(2): Unconnected pads
+    @ (124.968 mm,62.230 mm): Pad 2 on B.Cu, Non-copper of Q5 net Net-(P3-Pad1)
+    @ (131.572 mm,62.230 mm): Pad 4 on B.Cu, Non-copper of Q5
+ErrType(2): Unconnected pads
+    @ (124.968 mm,69.850 mm): Pad 2 on B.Cu, Non-copper of Q6 net Net-(P4-Pad1)
+    @ (131.572 mm,69.850 mm): Pad 4 on B.Cu, Non-copper of Q6
+
+** End of Report **

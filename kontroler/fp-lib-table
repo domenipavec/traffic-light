@@ -1,0 +1,5 @@
+(fp_lib_table
+  (lib (name 1447423C)(type KiCad)(uri "$(KIPRJMOD)/1447423C.pretty")(options "")(descr ""))
+  (lib (name halfbattery)(type KiCad)(uri "$(KIPRJMOD)/halfbattery.pretty")(options "")(descr ""))
+  (lib (name attiny841-spi)(type KiCad)(uri "$(KIPRJMOD)/attiny841-spi.pretty")(options "")(descr ""))
+)
