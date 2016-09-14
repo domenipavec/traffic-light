@@ -105,7 +105,8 @@ static uint8_t state = 1;
 static uint8_t mode = 0;
 static uint8_t EEMEM eeprom_mode = 0;
 
-static const uint16_t ON_TIME = 10;
+static uint16_t on_time = 10;
+static uint16_t EEMEM eeprom_on_time = 10;
 static const uint16_t BLINK_TIME = 1;
 static const uint16_t YELLOW_TIME = 2;
 
@@ -208,6 +209,13 @@ int main() {
 
 	// read eeprom
 	mode = eeprom_read_byte(&eeprom_mode);
+	if (mode > 3) {
+		mode = 0;
+	}
+	on_time = eeprom_read_word(&eeprom_on_time);
+	if (on_time < 1) {
+		on_time = 1;
+	}
 
 	// init debounce timer (65ms ovf)
 	TCCR1B = BIT(CS11);
@@ -272,11 +280,11 @@ int main() {
 			}
 		} else if (mode == 1) {
 			if (state == 0) {
-				transition(ON_TIME, 1);
+				transition(on_time, 1);
 			} else if (state == 1) {
 				transition(YELLOW_TIME, 2);
 			} else if (state == 2) {
-				transition(ON_TIME, 3);
+				transition(on_time, 3);
 			} else if (state == 3) {
 				transition(YELLOW_TIME, 0);
 			} else {
@@ -304,6 +312,8 @@ int main() {
 			} else if (state == 0) {
 				uint16_t new_time = pressed_transition(&sw1, 1);
 				if (new_time > 0) {
+					on_time = new_time;
+					eeprom_update_word(&eeprom_on_time, on_time);
 					mode = 1;
 					eeprom_update_byte(&eeprom_mode, mode);
 				}
