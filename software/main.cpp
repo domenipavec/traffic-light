@@ -41,6 +41,10 @@ static const uint8_t YELLOW = PA2;
 static const uint8_t GREEN = PA1;
 
 static volatile uint16_t power = 450;
+static const uint16_t power_modes[] = {150, 160, 170, 180, 200, 250, 300, 400, 450};
+static const uint8_t POWER_INDEX_MAX = sizeof(power_modes)/sizeof(power_modes[0]) - 1;
+static uint8_t power_index = 0;
+
 static volatile bool pwm_enabled = false;
 
 static volatile uint16_t adc = 0;
@@ -216,6 +220,7 @@ int main() {
 	if (on_time < 1) {
 		on_time = 1;
 	}
+	power = power_modes[power_index];
 
 	// init debounce timer (65ms ovf)
 	TCCR1B = BIT(CS11);
@@ -324,10 +329,10 @@ int main() {
 		}
 		// buttons
 		if (pressed(&sw2)) {
-			power += 10;
-			if (power > 450) {
-				power = 450;
+			if (power_index < POWER_INDEX_MAX) {
+				power_index++;
 			}
+			power = power_modes[power_index];
 		}
 		if (pressed(&sw3)) {
 			if (mode == 0) {
@@ -344,10 +349,10 @@ int main() {
 			set_state();
 		}
 		if (pressed(&sw4)) {
-			power -= 10;
-			if (power < 150) {
-				power = 150;
+			if (power_index > 0) {
+				power_index--;
 			}
+			power = power_modes[power_index];
 		}
 		if (pressed(&sw3, LONG_PRESS)) {
 			mode = 3;
