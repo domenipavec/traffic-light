@@ -103,6 +103,7 @@ ISR(TIMER2_COMPA_vect) {
 static uint8_t state = 1;
 // describes operation mode (manual, automatic)
 static uint8_t mode = 0;
+static uint8_t EEMEM eeprom_mode = 0;
 
 static const uint16_t ON_TIME = 10;
 static const uint16_t BLINK_TIME = 1;
@@ -205,6 +206,9 @@ int main() {
 	// wait for button release
 	while (BITCLEAR(PINB, PB2));
 
+	// read eeprom
+	mode = eeprom_read_byte(&eeprom_mode);
+
 	// init debounce timer (65ms ovf)
 	TCCR1B = BIT(CS11);
 	// set overflow interrupt
@@ -252,6 +256,11 @@ int main() {
 		shutdown();
 	}
 	set_state();
+	while (timer < BLINK_TIME);
+
+	state = 4;
+	set_state();
+	while (timer < BLINK_TIME);
 
 	for (;;) {
 		// state machine
@@ -272,6 +281,7 @@ int main() {
 				transition(YELLOW_TIME, 0);
 			} else {
 				state = 0;
+				set_state();
 			}
 		} else if (mode == 2) {
 			if (state == 0) {
@@ -282,6 +292,9 @@ int main() {
 				pressed_transition(&sw1, 3);
 			} else if (state == 3) {
 				transition(YELLOW_TIME, 0);
+			} else {
+				state = 0;
+				set_state();
 			}
 		} else if (mode == 3) {
 			if (state == 5) {
@@ -292,7 +305,11 @@ int main() {
 				uint16_t new_time = pressed_transition(&sw1, 1);
 				if (new_time > 0) {
 					mode = 1;
+					eeprom_update_byte(&eeprom_mode, mode);
 				}
+			} else {
+				state = 5;
+				set_state();
 			}
 		}
 		// buttons
@@ -313,6 +330,7 @@ int main() {
 				mode = 0;
 				state = 1;
 			}
+			eeprom_update_byte(&eeprom_mode, mode);
 			set_state();
 		}
 		if (pressed(&sw4)) {
