@@ -43,9 +43,18 @@ static const uint8_t GREEN = PA1;
 static volatile uint16_t power = 450;
 static volatile bool pwm_enabled = false;
 
+static volatile uint16_t adc = 0;
+static const uint8_t ADC_AVERAGE_SHIFT = 2;
+static volatile uint16_t adc_average = 920<<ADC_AVERAGE_SHIFT;
+
+static const uint16_t ADC_SHUTDOWN = 750;
+static const uint16_t ADC_LOW = 820;
+static const uint16_t ADC_WARNING = 920;
+
 ISR(ADC_vect) {
+	adc = ADC;
 	if (pwm_enabled) {
-		OCR0B = 255 - (ADC<<5)/power;
+		OCR0B = 255 - (adc << 5)/power;
 	}
 }
 
@@ -81,6 +90,13 @@ static volatile uint16_t timer;
 
 ISR(TIMER2_OVF_vect) {
 	timer++;
+}
+
+ISR(TIMER2_COMPA_vect) {
+	if (adc != 0) {
+		adc_average -= adc_average >> ADC_AVERAGE_SHIFT;
+		adc_average += adc;
+	}
 }
 
 // describes current light configuration
@@ -151,6 +167,11 @@ static inline uint16_t pressed_transition(volatile uint8_t * sw, uint8_t new_sta
 	return old_timer;
 }
 
+static inline void shutdown() {
+	CLEARBIT(PORTB, PB1);
+	while(true);
+}
+
 int main() {
 	// init
 
@@ -172,26 +193,30 @@ int main() {
 	DIDR0 = BIT(ADC6D);
 	DIDR1 = BIT(ADC11D);
 
-	_delay_ms(10);
+	for (uint16_t i = 0; i < 10; i++) {
+		_delay_ms(1);
+	}
 
 	// check if we are powering down
 	if (BITSET(PINB, PB2)) {
-		CLEARBIT(PORTB, PB1);
-		while(true);
+		shutdown();
 	}
 
 	// wait for button release
-	while(BITCLEAR(PINB, PB2));
+	while (BITCLEAR(PINB, PB2));
 
 	// init debounce timer (65ms ovf)
 	TCCR1B = BIT(CS11);
 	// set overflow interrupt
 	TIMSK1 = BIT(TOIE1);
 
-	// init timing timer
+	// init timing timer (500ms)
 	TCCR2B = BIT(CS20) | BIT(CS21);
 	// set overflow interrupt
 	TIMSK2 = BIT(TOIE2);
+	// set match interrupt to halfway for adc averaging
+	OCR2A = 0xffff>>1;
+	SETBIT(TIMSK2, OCIE2A);
 
 	// init pwm timer
 	// tocc6 is OCR0B
@@ -213,14 +238,28 @@ int main() {
 	// enable interrupts
 	sei();
 
+	// wait for adc results
+	while (adc == 0);
+
+	// flash battery indication
+	if (adc > ADC_WARNING) {
+		state = 0;
+	} else if (adc > ADC_LOW) {
+		state = 1;
+	} else if (adc > ADC_SHUTDOWN) {
+		state = 2;
+	} else {
+		shutdown();
+	}
+	set_state();
+
 	for (;;) {
+		// state machine
 		if (mode == 0) {
 			if (state == 1) {
 				transition(BLINK_TIME, 4);
-			} else if (state == 4) {
-				transition(BLINK_TIME, 1);
 			} else {
-				state = 1;
+				transition(BLINK_TIME, 1);
 			}
 		} else if (mode == 1) {
 			if (state == 0) {
@@ -256,6 +295,7 @@ int main() {
 				}
 			}
 		}
+		// buttons
 		if (pressed(&sw2)) {
 			power += 10;
 			if (power > 450) {
@@ -286,12 +326,10 @@ int main() {
 			state = 5;
 			set_state();
 		}
-		if (pressed(&sw1, LONG_PRESS)) {
-			// shutdown
-			CLEARBIT(PORTB, PB1);
+		if (adc_average < (ADC_SHUTDOWN << ADC_AVERAGE_SHIFT) || pressed(&sw1, LONG_PRESS)) {
 			state = 4;
 			set_state();
-			while(true);
+			shutdown();
 		}
 	}
 }
