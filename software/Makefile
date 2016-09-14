@@ -82,7 +82,7 @@ PROJECTNAME=avr
 
 # Avrdude arguments for setting fuses
 # (I use http://www.engbedded.com/cgi-bin/fcx.cgi)
-FUSE_SETTINGS=-U lfuse:w:0xe2:m -U hfuse:w:0xdf:m -U efuse:w:0xff:m
+FUSE_SETTINGS=-U lfuse:w:0xe2:m -U hfuse:w:0xd5:m -U efuse:w:0xfd:m
 
 # MCU clock speed
 F_CPU = 8000000UL

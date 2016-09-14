@@ -40,7 +40,7 @@ static const uint8_t RED = PA0;
 static const uint8_t YELLOW = PA2;
 static const uint8_t GREEN = PA1;
 
-static volatile uint16_t power = 450;
+static volatile uint16_t power = 150;
 static const uint16_t power_modes[] = {150, 160, 170, 180, 200, 250, 300, 400, 450};
 static const uint8_t POWER_INDEX_MAX = sizeof(power_modes)/sizeof(power_modes[0]) - 1;
 static uint8_t power_index = 0;
@@ -225,7 +225,6 @@ int main() {
 	if (power_index > POWER_INDEX_MAX) {
 		power_index = POWER_INDEX_MAX;
 	}
-	power = power_modes[power_index];
 
 	// init debounce timer
 	// set overflow interrupt
@@ -266,6 +265,9 @@ int main() {
 	// wait for adc results
 	while (adc == 0);
 
+	// start with low power to avoid huge drops
+	power = 200;
+
 	// flash battery indication
 	if (adc > ADC_WARNING) {
 		state = 0;
@@ -282,6 +284,8 @@ int main() {
 	state = 4;
 	set_state();
 	while (timer < BLINK_TIME);
+
+	power = power_modes[power_index];
 
 	for (;;) {
 		// state machine
