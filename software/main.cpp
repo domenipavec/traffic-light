@@ -200,7 +200,7 @@ int main() {
 	DIDR0 = BIT(ADC6D);
 	DIDR1 = BIT(ADC11D);
 
-	for (uint16_t i = 0; i < 10; i++) {
+	for (uint16_t i = 0; i < 100; i++) {
 		_delay_ms(1);
 	}
 
@@ -214,7 +214,7 @@ int main() {
 
 	// read eeprom
 	mode = eeprom_read_byte(&eeprom_mode);
-	if (mode > 3) {
+	if (mode > 2) {
 		mode = 0;
 	}
 	on_time = eeprom_read_word(&eeprom_on_time);
@@ -227,18 +227,20 @@ int main() {
 	}
 	power = power_modes[power_index];
 
-	// init debounce timer (65ms ovf)
-	TCCR1B = BIT(CS11);
+	// init debounce timer
 	// set overflow interrupt
 	TIMSK1 = BIT(TOIE1);
+	// set clock for overflow every 65ms
+	TCCR1B = BIT(CS11);
 
-	// init timing timer (500ms)
-	TCCR2B = BIT(CS20) | BIT(CS21);
+	// init timing timer
 	// set overflow interrupt
 	TIMSK2 = BIT(TOIE2);
 	// set match interrupt to halfway for adc averaging
 	OCR2A = 0xffff>>1;
 	SETBIT(TIMSK2, OCIE2A);
+	// set clock for overflow every 500ms
+	TCCR2B = BIT(CS20) | BIT(CS21);
 
 	// init pwm timer
 	// tocc6 is OCR0B
@@ -246,9 +248,10 @@ int main() {
 	SETBIT(TOCPMCOE, TOCC6OE);
 	// set fast pwm non inverting
 	TCCR0A = BIT(COM0B1) | BIT(WGM01) | BIT(WGM00);
+	// initial zero pwm
+	OCR0B = 0;
 	// set no prescaling clock
 	TCCR0B = BIT(CS00);
-	OCR0B = 0;
 
 	// set adc to adc11 for vin
 	ADMUXA = 11;
