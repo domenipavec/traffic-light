@@ -44,6 +44,7 @@ static volatile uint16_t power = 450;
 static const uint16_t power_modes[] = {150, 160, 170, 180, 200, 250, 300, 400, 450};
 static const uint8_t POWER_INDEX_MAX = sizeof(power_modes)/sizeof(power_modes[0]) - 1;
 static uint8_t power_index = 0;
+static uint8_t EEMEM eeprom_power_index = 0;
 
 static volatile bool pwm_enabled = false;
 
@@ -220,6 +221,10 @@ int main() {
 	if (on_time < 1) {
 		on_time = 1;
 	}
+	power_index = eeprom_read_byte(&eeprom_power_index);
+	if (power_index > POWER_INDEX_MAX) {
+		power_index = POWER_INDEX_MAX;
+	}
 	power = power_modes[power_index];
 
 	// init debounce timer (65ms ovf)
@@ -332,6 +337,7 @@ int main() {
 			if (power_index < POWER_INDEX_MAX) {
 				power_index++;
 			}
+			eeprom_update_byte(&eeprom_power_index, power_index);
 			power = power_modes[power_index];
 		}
 		if (pressed(&sw3)) {
@@ -352,6 +358,7 @@ int main() {
 			if (power_index > 0) {
 				power_index--;
 			}
+			eeprom_update_byte(&eeprom_power_index, power_index);
 			power = power_modes[power_index];
 		}
 		if (pressed(&sw3, LONG_PRESS)) {
